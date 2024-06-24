@@ -283,3 +283,29 @@ def detect_anomalies_iqr(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
         anomalies = pd.DataFrame(columns=features)
 
     return anomalies
+
+
+def flag_anomalies(df, features):
+    """
+    Identify and flag anomalies in a DataFrame based on the Interquartile Range (IQR) method for specified features.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame containing the data.
+        features (list of str): A list of column names in the DataFrame to check for anomalies.
+
+    Returns:
+        pd.Series: A Series of boolean values where True indicates an anomaly in any of the specified features.
+    """
+    anomaly_flags = pd.Series(False, index=df.index)
+
+    for feature in features:
+        Q1 = df[feature].quantile(0.25)
+        Q3 = df[feature].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+
+        feature_anomalies = (df[feature] < lower_bound) | (df[feature] > upper_bound)
+        anomaly_flags |= feature_anomalies
+
+    return anomaly_flags
