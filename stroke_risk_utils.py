@@ -4,8 +4,32 @@ import plotly.graph_objects as go
 import plotly.subplots as sp
 from scipy.stats import chi2_contingency
 from scipy import stats
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 import numpy as np
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    classification_report,
+    confusion_matrix,
+    roc_auc_score,
+    average_precision_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    balanced_accuracy_score,
+)
+import xgboost as xgb
+import lightgbm as lgb
+from catboost import CatBoostClassifier
+import plotly.express as px
+import plotly.graph_objects as go
+import plotly.subplots as sp
+from plotly.subplots import make_subplots
+from sklearn.inspection import permutation_importance
+
 
 PRIMARY_COLORS = ["#5684F7", "#3A5CED", "#7E7AE6"]
 SECONDARY_COLORS = ["#7BC0FF", "#B8CCF4", "#18407F", "#85A2FF", "#C2A9FF", "#3D3270"]
@@ -326,3 +350,246 @@ def calculate_cramers_v(contingency_table):
     min_dim = min(contingency_table.shape) - 1
     cramers_v = np.sqrt(chi2 / (n * min_dim))
     return cramers_v
+
+
+def evaluate_model(model, X, y, dataset_name=None):
+    y_pred = model.predict(X)
+    y_pred_proba = model.predict_proba(X)[:, 1]
+
+    if dataset_name:
+        print(f"\nResults on {dataset_name} set:")
+    print(classification_report(y, y_pred))
+    print("Confusion Matrix:")
+    print(confusion_matrix(y, y_pred))
+    print(f"ROC AUC: {roc_auc_score(y, y_pred_proba):.4f}")
+    print(f"PR AUC: {average_precision_score(y, y_pred_proba):.4f}")
+    print(f"F1 Score: {f1_score(y, y_pred):.4f}")
+    print(f"Precision: {precision_score(y, y_pred):.4f}")
+    print(f"Recall: {recall_score(y, y_pred):.4f}")
+    print(f"Balanced Accuracy: {balanced_accuracy_score(y, y_pred):.4f}")
+
+    return {
+        "roc_auc": roc_auc_score(y, y_pred_proba),
+        "pr_auc": average_precision_score(y, y_pred_proba),
+        "f1": f1_score(y, y_pred),
+        "precision": precision_score(y, y_pred),
+        "recall": recall_score(y, y_pred),
+        "balanced_accuracy": balanced_accuracy_score(y, y_pred),
+    }
+
+
+def plot_model_performance(
+    results: Dict[str, Dict[str, float]], metrics: List[str], save_path: str = None
+) -> None:
+    """
+    Plots and optionally saves a bar chart of model performance metrics with legend on the right.
+
+    Args:
+        results: A dictionary with model names as keys and dicts of performance metrics as values.
+        metrics: List of performance metrics to plot (e.g., 'Accuracy', 'Precision').
+        save_path: Path to save the image file (optional).
+    """
+    model_names = list(results.keys())
+
+    data = {
+        metric: [results[name][metric] for name in model_names] for metric in metrics
+    }
+
+    fig = go.Figure()
+
+    for i, metric in enumerate(metrics):
+        fig.add_trace(
+            go.Bar(
+                x=model_names,
+                y=data[metric],
+                name=metric,
+                marker_color=ALL_COLORS[i % len(ALL_COLORS)],
+                text=[f"{value:.2f}" for value in data[metric]],
+                textposition="auto",
+            )
+        )
+
+    fig.update_layout(
+        barmode="group",
+        title={
+            "text": "Comparison of Model Performance Metrics",
+            "y": 0.95,
+            "x": 0.5,
+            "xanchor": "center",
+            "yanchor": "top",
+            "font": dict(size=24),
+        },
+        xaxis_title="Model",
+        yaxis_title="Value",
+        legend_title="Metrics",
+        font=dict(size=14),
+        height=500,
+        width=1200,
+        template="plotly_white",
+        legend=dict(yanchor="top", y=1, xanchor="left", x=1.02),
+    )
+
+    fig.update_yaxes(range=[0, 1], showgrid=True, gridwidth=1, gridcolor="LightGrey")
+    fig.update_xaxes(tickangle=-45)
+
+    fig.show()
+
+    if save_path:
+        fig.write_image(save_path)
+
+
+def plot_combined_confusion_matrices(
+    results, y_test, y_pred_dict, labels=None, save_path=None
+):
+    """
+    Plots a combined confusion matrix for multiple models.
+
+    Parameters:
+    results (dict): A dictionary containing the results of multiple models.
+        Each key is the name of a model, and the value is the result of that model.
+    y_test (numpy.ndarray): The true labels for the dataset.
+    y_pred_dict (dict): A dictionary containing the predicted labels for each model.
+        Each key is the name of a model, and the value is the predicted labels for that model.
+    labels (list, optional): A list of class labels. If not provided, default labels are used.
+    save_path (str, optional): The path to save the image file. If not provided, the image is not saved.
+
+    Returns:
+    None
+    """
+    n_models = len(results)
+    if n_models > 4:
+        print("Warning: Only the first 4 models will be plotted.")
+        n_models = 4
+
+    fig = make_subplots(rows=2, cols=2, subplot_titles=list(results.keys())[:n_models])
+
+    for i, (name, model_results) in enumerate(list(results.items())[:n_models]):
+        row = i // 2 + 1
+        col = i % 2 + 1
+
+        cm = confusion_matrix(y_test, y_pred_dict[name])
+        cm_percent = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis] * 100
+
+        # Create custom text for each cell
+        text = [
+            [
+                f"TN: {cm[0][0]}<br>({cm_percent[0][0]:.1f}%)",
+                f"FP: {cm[0][1]}<br>({cm_percent[0][1]:.1f}%)",
+            ],
+            [
+                f"FN: {cm[1][0]}<br>({cm_percent[1][0]:.1f}%)",
+                f"TP: {cm[1][1]}<br>({cm_percent[1][1]:.1f}%)",
+            ],
+        ]
+
+        # Define colorscale with normalized values
+        colorscale = [
+            [0, ALL_COLORS[2]],  # TN
+            [0.33, ALL_COLORS[1]],  # FP
+            [0.66, ALL_COLORS[1]],  # FN
+            [1, ALL_COLORS[0]],  # TP
+        ]
+
+        heatmap = go.Heatmap(
+            z=cm,
+            x=labels if labels else ["Class 0", "Class 1"],
+            y=labels if labels else ["Class 0", "Class 1"],
+            hoverongaps=False,
+            text=text,
+            texttemplate="%{text}",
+            colorscale=colorscale,
+            showscale=False,
+        )
+
+        fig.add_trace(heatmap, row=row, col=col)
+
+        fig.update_xaxes(
+            title_text="Predicted", row=row, col=col, tickfont=dict(size=10)
+        )
+        fig.update_yaxes(title_text="Actual", row=row, col=col, tickfont=dict(size=10))
+
+    fig.update_layout(
+        title_text="Confusion Matrices for All Models",
+        title_x=0.5,
+        height=500,
+        width=1200,
+        showlegend=False,
+        font=dict(size=12),
+    )
+
+    fig.show()
+
+    if save_path:
+        fig.write_image(save_path)
+
+
+def extract_feature_importances(model, X, y):
+    """
+    Extract feature importances using permutation importance for models that do not directly provide them.
+
+    Args:
+        model: Trained model
+        X: Feature data (DataFrame)
+        y: Target data (Series or array)
+
+    Returns:
+        Array of feature importances
+    """
+    if hasattr(model, "feature_importances_"):
+        return model.feature_importances_
+    else:
+        # Calculate permutation importance
+        perm_import = permutation_importance(model, X, y, n_repeats=30, random_state=42)
+        return perm_import.importances_mean
+
+
+def plot_feature_importances(
+    feature_importances: Dict[str, Dict[str, float]], save_path: str = None
+) -> None:
+    """
+    Plots and optionally saves a bar chart of feature importances across different models.
+
+    Args:
+        feature_importances: A dictionary with model names as keys and dicts of feature importances as values.
+        save_path: Path to save the image file (optional).
+    """
+    fig = go.Figure()
+
+    for i, (name, importances) in enumerate(feature_importances.items()):
+        fig.add_trace(
+            go.Bar(
+                x=list(importances.keys()),
+                y=list(importances.values()),
+                name=name,
+                marker_color=ALL_COLORS[i % len(ALL_COLORS)],
+                text=[f"{value:.3f}" for value in importances.values()],
+                textposition="auto",
+            )
+        )
+
+    fig.update_layout(
+        title={
+            "text": "Feature Importances Across Models",
+            "y": 0.95,
+            "x": 0.5,
+            "xanchor": "center",
+            "yanchor": "top",
+            "font": dict(size=24),
+        },
+        xaxis_title="Features",
+        yaxis_title="Importance",
+        barmode="group",
+        template="plotly_white",
+        legend_title="Models",
+        font=dict(size=14),
+        height=600,
+        width=1200,
+    )
+
+    fig.update_xaxes(tickangle=-45)
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor="LightGrey")
+
+    fig.show()
+
+    if save_path:
+        fig.write_image(save_path)
