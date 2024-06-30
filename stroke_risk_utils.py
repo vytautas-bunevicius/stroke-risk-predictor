@@ -409,15 +409,15 @@ def evaluate_model(model, X, y, dataset_name=None, threshold=None, target_recall
     Evaluate a model's performance with optional threshold adjustment.
 
     Args:
-    model: The trained model to evaluate
-    X: Features
-    y: True labels
-    dataset_name: Name of the dataset (optional)
-    threshold: Custom threshold for classification (optional)
-    target_recall: Target recall for threshold adjustment (optional)
+        model (model): The trained model to evaluate.
+        X (array): Features.
+        y (array): True labels.
+        dataset_name (str, optional): Name of the dataset for display purposes.
+        threshold (float, optional): Custom threshold for classification.
+        target_recall (float, optional): Target recall for threshold adjustment.
 
     Returns:
-    Dict containing various performance metrics
+        dict: Dictionary containing various performance metrics.
     """
     y_pred_proba = model.predict_proba(X)[:, 1]
 
@@ -436,33 +436,27 @@ def evaluate_model(model, X, y, dataset_name=None, threshold=None, target_recall
     if dataset_name:
         print(f"\nResults on {dataset_name} set:")
 
-    # Use context manager to suppress warnings within this block
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=UndefinedMetricWarning)
-        print(classification_report(y, y_pred))
-        print("Confusion Matrix:")
-        print(confusion_matrix(y, y_pred))
-        print(f"ROC AUC: {roc_auc_score(y, y_pred_proba):.4f}")
-        print(f"PR AUC: {average_precision_score(y, y_pred_proba):.4f}")
-        print(f"F1 Score: {f1_score(y, y_pred):.4f}")
-        print(f"Precision: {precision_score(y, y_pred):.4f}")
-        print(f"Recall: {recall_score(y, y_pred):.4f}")
-        print(f"Balanced Accuracy: {balanced_accuracy_score(y, y_pred):.4f}")
+    print(classification_report(y, y_pred, zero_division=1))
+    print("Confusion Matrix:")
+    print(confusion_matrix(y, y_pred))
+    print(f"ROC AUC: {roc_auc_score(y, y_pred_proba):.4f}")
+    print(f"PR AUC: {average_precision_score(y, y_pred_proba):.4f}")
+    print(f"F1 Score: {f1_score(y, y_pred, zero_division=1):.4f}")
+    print(f"Precision: {precision_score(y, y_pred, zero_division=1):.4f}")
+    print(f"Recall: {recall_score(y, y_pred):.4f}")
+    print(f"Balanced Accuracy: {balanced_accuracy_score(y, y_pred):.4f}")
 
-    # Return metrics while suppressing warnings
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=UndefinedMetricWarning)
-        return {
-            "roc_auc": roc_auc_score(y, y_pred_proba),
-            "pr_auc": average_precision_score(y, y_pred_proba),
-            "f1": f1_score(y, y_pred),
-            "precision": precision_score(y, y_pred),
-            "recall": recall_score(y, y_pred),
-            "balanced_accuracy": balanced_accuracy_score(y, y_pred),
-            "threshold": threshold if threshold is not None else 0.5,
-            "y_pred": y_pred,
-            "y_pred_proba": y_pred_proba,
-        }
+    return {
+        "roc_auc": roc_auc_score(y, y_pred_proba),
+        "pr_auc": average_precision_score(y, y_pred_proba),
+        "f1": f1_score(y, y_pred, zero_division=1),
+        "precision": precision_score(y, y_pred, zero_division=1),
+        "recall": recall_score(y, y_pred),
+        "balanced_accuracy": balanced_accuracy_score(y, y_pred),
+        "threshold": threshold if threshold is not None else 0.5,
+        "y_pred": y_pred,
+        "y_pred_proba": y_pred_proba,
+    }
 
 
 def plot_model_performance(
