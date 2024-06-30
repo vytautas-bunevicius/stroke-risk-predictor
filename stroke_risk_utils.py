@@ -1,59 +1,72 @@
+import warnings
+from typing import Dict, List, Optional, Tuple
+
+import lightgbm as lgb
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.subplots as sp
-from scipy.stats import chi2_contingency
+import xgboost as xgb
+from catboost import CatBoostClassifier
+from plotly.subplots import make_subplots
 from scipy import stats
-from typing import Tuple, List, Dict
-import numpy as np
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from scipy.stats import chi2_contingency
+from sklearn.exceptions import UndefinedMetricWarning
+from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
+    average_precision_score,
+    balanced_accuracy_score,
     classification_report,
     confusion_matrix,
-    roc_auc_score,
-    average_precision_score,
     f1_score,
+    precision_recall_curve,
     precision_score,
     recall_score,
-    balanced_accuracy_score,
+    roc_auc_score,
 )
-import xgboost as xgb
-import lightgbm as lgb
-from catboost import CatBoostClassifier
-import plotly.express as px
-import plotly.graph_objects as go
-import plotly.subplots as sp
-from plotly.subplots import make_subplots
-from sklearn.inspection import permutation_importance
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 
-PRIMARY_COLORS = ["#5684F7", "#3A5CED", "#7E7AE6"]
-SECONDARY_COLORS = ["#7BC0FF", "#B8CCF4", "#18407F", "#85A2FF", "#C2A9FF", "#3D3270"]
+BACKGROUND_COLOR = "#EEECE2"
+PRIMARY_COLORS = ["#CC7B5C", "#D4A27F", "#EBDBBC", "#9C8AA5"]
+SECONDARY_COLORS = [
+    "#91A694",
+    "#8B9BAE",
+    "#666663",
+    "#BFBFBA",
+    "#E5E4DF",
+    "#F0F0EB",
+    "#FAFAF7",
+]
 ALL_COLORS = PRIMARY_COLORS + SECONDARY_COLORS
 
 
 def plot_combined_histograms(
-    df: pd.DataFrame, features: List[str], nbins: int = 40, save_path: str = None
+    df: pd.DataFrame,
+    features: List[str],
+    nbins: int = 40,
+    save_path: Optional[str] = None,
 ) -> None:
     """Plots combined histograms for specified features in the DataFrame.
 
     Args:
-        df (pd.DataFrame): DataFrame to plot.
-        features (List[str]): List of features to plot histograms for.
-        nbins (int): Number of bins to use in histograms.
-        save_path (str): Path to save the image file (optional).
+        df: DataFrame containing the features to plot.
+        features: List of feature names to plot histograms for.
+        nbins: Number of bins for each histogram. Defaults to 40.
+        save_path: Optional path to save the plot image.
+
+    Returns:
+        None. Displays the plot and optionally saves it to a file.
     """
     title = f"Distribution of {', '.join(features)}"
-    rows = 1
-    cols = len(features)
+    rows, cols = 1, len(features)
 
-    fig = sp.make_subplots(
-        rows=rows, cols=cols, subplot_titles=features, horizontal_spacing=0.1
-    )
+    fig = make_subplots(rows=rows, cols=cols, horizontal_spacing=0.1)
+
+    axis_font = {"family": "Styrene A", "color": "#191919"}
 
     for i, feature in enumerate(features):
         fig.add_trace(
@@ -61,26 +74,43 @@ def plot_combined_histograms(
                 x=df[feature],
                 nbinsx=nbins,
                 name=feature,
-                marker=dict(
-                    color=PRIMARY_COLORS[i % len(PRIMARY_COLORS)],
-                    line=dict(color="#000000", width=1),
-                ),
+                marker={
+                    "color": PRIMARY_COLORS[i % len(PRIMARY_COLORS)],
+                    "line": {"color": "#000000", "width": 1},
+                },
             ),
             row=1,
             col=i + 1,
         )
-        fig.update_xaxes(title_text=feature, row=1, col=i + 1, title_font=dict(size=14))
-        fig.update_yaxes(title_text="Count", row=1, col=i + 1, title_font=dict(size=14))
+
+        fig.update_xaxes(
+            title_text=feature,
+            row=1,
+            col=i + 1,
+            title_standoff=25,
+            title_font={**axis_font, "size": 14},
+            tickfont={**axis_font, "size": 12},
+        )
+        fig.update_yaxes(
+            title_text="Count",
+            row=1,
+            col=i + 1,
+            title_font={**axis_font, "size": 14},
+            tickfont={**axis_font, "size": 12},
+        )
 
     fig.update_layout(
         title_text=title,
         title_x=0.5,
-        title_font=dict(size=20),
+        title_font={"family": "Styrene B", "size": 20, "color": "#191919"},
         showlegend=False,
         template="plotly_white",
+        plot_bgcolor=BACKGROUND_COLOR,
+        paper_bgcolor=BACKGROUND_COLOR,
         height=500,
         width=400 * len(features),
-        margin=dict(l=50, r=50, t=80, b=50),
+        margin={"l": 50, "r": 50, "t": 80, "b": 80},
+        font={**axis_font, "size": 12},
     )
 
     fig.show()
@@ -93,29 +123,31 @@ def plot_combined_bar_charts(
     df: pd.DataFrame,
     features: List[str],
     max_features_per_plot: int = 3,
-    save_path: str = None,
+    save_path: Optional[str] = None,
 ) -> None:
     """Plots combined bar charts for specified categorical features in the DataFrame.
 
     Args:
-        df (pd.DataFrame): DataFrame to plot.
-        features (List[str]): List of categorical features to plot bar charts for.
-        max_features_per_plot (int): Maximum number of features to display per plot.
-        save_path (str): Path to save the image file (optional).
+        df: DataFrame containing the features to plot.
+        features: List of categorical feature names to plot bar charts for.
+        max_features_per_plot: Maximum number of features to display per plot. Defaults to 3.
+        save_path: Optional path to save the plot images.
+
+    Returns:
+        None. Displays the plots and optionally saves them to files.
     """
     feature_chunks = [
         features[i : i + max_features_per_plot]
         for i in range(0, len(features), max_features_per_plot)
     ]
 
+    axis_font = {"family": "Styrene A", "color": "#191919"}
+
     for chunk_index, feature_chunk in enumerate(feature_chunks):
         title = f"Distribution of {', '.join(feature_chunk)}"
-        rows = 1
-        cols = len(feature_chunk)
+        rows, cols = 1, len(feature_chunk)
 
-        fig = sp.make_subplots(
-            rows=rows, cols=cols, subplot_titles=[None] * cols, horizontal_spacing=0.1
-        )
+        fig = make_subplots(rows=rows, cols=cols, horizontal_spacing=0.1)
 
         for i, feature in enumerate(feature_chunk):
             value_counts = df[feature].value_counts().reset_index()
@@ -125,10 +157,10 @@ def plot_combined_bar_charts(
                     x=value_counts[feature],
                     y=value_counts["count"],
                     name=feature,
-                    marker=dict(
-                        color=PRIMARY_COLORS[i % len(PRIMARY_COLORS)],
-                        line=dict(color="#000000", width=1),
-                    ),
+                    marker={
+                        "color": PRIMARY_COLORS[i % len(PRIMARY_COLORS)],
+                        "line": {"color": "#000000", "width": 1},
+                    },
                 ),
                 row=1,
                 col=i + 1,
@@ -137,22 +169,30 @@ def plot_combined_bar_charts(
                 title_text=feature,
                 row=1,
                 col=i + 1,
-                title_font=dict(size=14),
+                title_font={**axis_font, "size": 14},
+                tickfont={**axis_font, "size": 12},
                 showticklabels=True,
             )
             fig.update_yaxes(
-                title_text="Count", row=1, col=i + 1, title_font=dict(size=14)
+                title_text="Count",
+                row=1,
+                col=i + 1,
+                title_font={**axis_font, "size": 14},
+                tickfont={**axis_font, "size": 12},
             )
 
         fig.update_layout(
             title_text=title,
             title_x=0.5,
-            title_font=dict(size=20),
+            title_font={"family": "Styrene B", "size": 20, "color": "#191919"},
             showlegend=False,
             template="plotly_white",
+            plot_bgcolor=BACKGROUND_COLOR,
+            paper_bgcolor=BACKGROUND_COLOR,
             height=500,
             width=400 * len(feature_chunk),
-            margin=dict(l=50, r=50, t=80, b=150),
+            margin={"l": 50, "r": 50, "t": 80, "b": 150},
+            font={**axis_font, "size": 12},
         )
 
         fig.show()
@@ -163,56 +203,68 @@ def plot_combined_bar_charts(
 
 
 def plot_combined_boxplots(
-    df: pd.DataFrame, features: List[str], save_path: str = None
+    df: pd.DataFrame, features: List[str], save_path: Optional[str] = None
 ) -> None:
     """Plots combined boxplots for specified numerical features in the DataFrame.
 
     Args:
-        df (pd.DataFrame): DataFrame to plot.
-        features (List[str]): List of numerical features to plot boxplots for.
-        save_path (str): Path to save the image file (optional).
+        df: DataFrame containing the features to plot.
+        features: List of numerical feature names to plot boxplots for.
+        save_path: Optional path to save the plot image.
+
+    Returns:
+        None. Displays the plot and optionally saves it to a file.
     """
     title = f"Boxplots of {', '.join(features)}"
-    rows = 1
-    cols = len(features)
+    rows, cols = 1, len(features)
 
-    fig = sp.make_subplots(
-        rows=rows, cols=cols, subplot_titles=[None] * cols, horizontal_spacing=0.1
-    )
+    fig = make_subplots(rows=rows, cols=cols, horizontal_spacing=0.1)
+
+    axis_font = {"family": "Styrene A", "color": "#191919"}
 
     for i, feature in enumerate(features):
         fig.add_trace(
             go.Box(
                 y=df[feature],
-                marker=dict(
-                    color=PRIMARY_COLORS[i % len(PRIMARY_COLORS)],
-                    line=dict(color="#000000", width=1),
-                ),
+                marker={
+                    "color": PRIMARY_COLORS[i % len(PRIMARY_COLORS)],
+                    "line": {"color": "#000000", "width": 1},
+                },
                 boxmean="sd",
                 showlegend=False,
             ),
             row=1,
             col=i + 1,
         )
-        fig.update_yaxes(title_text="Value", row=1, col=i + 1, title_font=dict(size=14))
+        fig.update_yaxes(
+            title_text="Value",
+            row=1,
+            col=i + 1,
+            title_font={**axis_font, "size": 14},
+            tickfont={**axis_font, "size": 12},
+        )
         fig.update_xaxes(
             tickvals=[0],
             ticktext=[feature],
             row=1,
             col=i + 1,
-            title_font=dict(size=14),
+            title_font={**axis_font, "size": 14},
+            tickfont={**axis_font, "size": 12},
             showticklabels=True,
         )
 
     fig.update_layout(
         title_text=title,
         title_x=0.5,
-        title_font=dict(size=20),
+        title_font={"family": "Styrene B", "size": 20, "color": "#191919"},
         showlegend=False,
         template="plotly_white",
+        plot_bgcolor=BACKGROUND_COLOR,
+        paper_bgcolor=BACKGROUND_COLOR,
         height=500,
         width=400 * len(features),
-        margin=dict(l=50, r=50, t=80, b=150),
+        margin={"l": 50, "r": 50, "t": 80, "b": 150},
+        font={**axis_font, "size": 12},
     )
 
     fig.show()
@@ -237,7 +289,7 @@ def plot_correlation_matrix(
     fig = px.imshow(
         correlation_matrix,
         text_auto=True,
-        color_continuous_scale=ALL_COLORS,
+        color_continuous_scale=PRIMARY_COLORS,
         title="Correlation Matrix",
     )
 
@@ -352,45 +404,83 @@ def calculate_cramers_v(contingency_table):
     return cramers_v
 
 
-def evaluate_model(model, X, y, dataset_name=None):
-    y_pred = model.predict(X)
+def evaluate_model(model, X, y, dataset_name=None, threshold=None, target_recall=None):
+    """
+    Evaluate a model's performance with optional threshold adjustment.
+
+    Args:
+    model: The trained model to evaluate
+    X: Features
+    y: True labels
+    dataset_name: Name of the dataset (optional)
+    threshold: Custom threshold for classification (optional)
+    target_recall: Target recall for threshold adjustment (optional)
+
+    Returns:
+    Dict containing various performance metrics
+    """
     y_pred_proba = model.predict_proba(X)[:, 1]
+
+    if target_recall is not None:
+        precisions, recalls, thresholds = precision_recall_curve(y, y_pred_proba)
+        idx = np.argmin(np.abs(recalls - target_recall))
+        threshold = thresholds[idx]
+        print(f"Adjusted threshold: {threshold:.4f}")
+
+    # Use the threshold if provided or adjusted, otherwise use default 0.5
+    if threshold is not None:
+        y_pred = (y_pred_proba >= threshold).astype(int)
+    else:
+        y_pred = model.predict(X)
 
     if dataset_name:
         print(f"\nResults on {dataset_name} set:")
-    print(classification_report(y, y_pred))
-    print("Confusion Matrix:")
-    print(confusion_matrix(y, y_pred))
-    print(f"ROC AUC: {roc_auc_score(y, y_pred_proba):.4f}")
-    print(f"PR AUC: {average_precision_score(y, y_pred_proba):.4f}")
-    print(f"F1 Score: {f1_score(y, y_pred):.4f}")
-    print(f"Precision: {precision_score(y, y_pred):.4f}")
-    print(f"Recall: {recall_score(y, y_pred):.4f}")
-    print(f"Balanced Accuracy: {balanced_accuracy_score(y, y_pred):.4f}")
 
-    return {
-        "roc_auc": roc_auc_score(y, y_pred_proba),
-        "pr_auc": average_precision_score(y, y_pred_proba),
-        "f1": f1_score(y, y_pred),
-        "precision": precision_score(y, y_pred),
-        "recall": recall_score(y, y_pred),
-        "balanced_accuracy": balanced_accuracy_score(y, y_pred),
-    }
+    # Use context manager to suppress warnings within this block
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UndefinedMetricWarning)
+        print(classification_report(y, y_pred))
+        print("Confusion Matrix:")
+        print(confusion_matrix(y, y_pred))
+        print(f"ROC AUC: {roc_auc_score(y, y_pred_proba):.4f}")
+        print(f"PR AUC: {average_precision_score(y, y_pred_proba):.4f}")
+        print(f"F1 Score: {f1_score(y, y_pred):.4f}")
+        print(f"Precision: {precision_score(y, y_pred):.4f}")
+        print(f"Recall: {recall_score(y, y_pred):.4f}")
+        print(f"Balanced Accuracy: {balanced_accuracy_score(y, y_pred):.4f}")
+
+    # Return metrics while suppressing warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UndefinedMetricWarning)
+        return {
+            "roc_auc": roc_auc_score(y, y_pred_proba),
+            "pr_auc": average_precision_score(y, y_pred_proba),
+            "f1": f1_score(y, y_pred),
+            "precision": precision_score(y, y_pred),
+            "recall": recall_score(y, y_pred),
+            "balanced_accuracy": balanced_accuracy_score(y, y_pred),
+            "threshold": threshold if threshold is not None else 0.5,
+            "y_pred": y_pred,
+            "y_pred_proba": y_pred_proba,
+        }
 
 
 def plot_model_performance(
-    results: Dict[str, Dict[str, float]], metrics: List[str], save_path: str = None
+    results: Dict[str, Dict[str, float]],
+    metrics: List[str],
+    save_path: Optional[str] = None,
 ) -> None:
-    """
-    Plots and optionally saves a bar chart of model performance metrics with legend on the right.
+    """Plots and optionally saves a bar chart of model performance metrics with legend on the right.
 
     Args:
         results: A dictionary with model names as keys and dicts of performance metrics as values.
         metrics: List of performance metrics to plot (e.g., 'Accuracy', 'Precision').
-        save_path: Path to save the image file (optional).
+        save_path: Optional path to save the plot image.
+
+    Returns:
+        None. Displays the plot and optionally saves it to a file.
     """
     model_names = list(results.keys())
-
     data = {
         metric: [results[name][metric] for name in model_names] for metric in metrics
     }
@@ -409,6 +499,8 @@ def plot_model_performance(
             )
         )
 
+    axis_font = {"family": "Styrene A", "color": "#191919"}
+
     fig.update_layout(
         barmode="group",
         title={
@@ -417,20 +509,22 @@ def plot_model_performance(
             "x": 0.5,
             "xanchor": "center",
             "yanchor": "top",
-            "font": dict(size=24),
+            "font": {"family": "Styrene B", "size": 24, "color": "#191919"},
         },
         xaxis_title="Model",
         yaxis_title="Value",
         legend_title="Metrics",
-        font=dict(size=14),
+        font={**axis_font, "size": 14},
         height=500,
         width=1200,
         template="plotly_white",
-        legend=dict(yanchor="top", y=1, xanchor="left", x=1.02),
+        legend={"yanchor": "top", "y": 1, "xanchor": "left", "x": 1.02},
+        plot_bgcolor=BACKGROUND_COLOR,
+        paper_bgcolor=BACKGROUND_COLOR,
     )
 
     fig.update_yaxes(range=[0, 1], showgrid=True, gridwidth=1, gridcolor="LightGrey")
-    fig.update_xaxes(tickangle=-45)
+    fig.update_xaxes(tickangle=-45, tickfont={**axis_font, "size": 12})
 
     fig.show()
 
@@ -439,38 +533,36 @@ def plot_model_performance(
 
 
 def plot_combined_confusion_matrices(
-    results, y_test, y_pred_dict, labels=None, save_path=None
-):
-    """
-    Plots a combined confusion matrix for multiple models.
-
-    Parameters:
-    results (dict): A dictionary containing the results of multiple models.
-        Each key is the name of a model, and the value is the result of that model.
-    y_test (numpy.ndarray): The true labels for the dataset.
-    y_pred_dict (dict): A dictionary containing the predicted labels for each model.
-        Each key is the name of a model, and the value is the predicted labels for that model.
-    labels (list, optional): A list of class labels. If not provided, default labels are used.
-    save_path (str, optional): The path to save the image file. If not provided, the image is not saved.
-
-    Returns:
-    None
-    """
+    results: Dict[str, Dict[str, float]],
+    y_test: np.ndarray,
+    y_pred_dict: Dict[str, np.ndarray],
+    labels: Optional[List[str]] = None,
+    save_path: Optional[str] = None,
+) -> None:
     n_models = len(results)
-    if n_models > 4:
-        print("Warning: Only the first 4 models will be plotted.")
-        n_models = 4
 
-    fig = make_subplots(rows=2, cols=2, subplot_titles=list(results.keys())[:n_models])
+    if n_models <= 2:
+        rows, cols = 1, 2
+    else:
+        rows, cols = 2, 2
 
-    for i, (name, model_results) in enumerate(list(results.items())[:n_models]):
-        row = i // 2 + 1
-        col = i % 2 + 1
+    fig = make_subplots(
+        rows=rows,
+        cols=cols,
+        subplot_titles=list(results.keys()) + [""] * (rows * cols - n_models),
+        vertical_spacing=0.2,
+        horizontal_spacing=0.1,
+    )
+
+    axis_font = {"family": "Styrene A", "color": "#191919"}
+
+    for i, (name, model_results) in enumerate(results.items()):
+        row = i // cols + 1
+        col = i % cols + 1
 
         cm = confusion_matrix(y_test, y_pred_dict[name])
         cm_percent = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis] * 100
 
-        # Create custom text for each cell
         text = [
             [
                 f"TN: {cm[0][0]}<br>({cm_percent[0][0]:.1f}%)",
@@ -482,18 +574,17 @@ def plot_combined_confusion_matrices(
             ],
         ]
 
-        # Define colorscale with normalized values
         colorscale = [
-            [0, ALL_COLORS[2]],  # TN
-            [0.33, ALL_COLORS[1]],  # FP
-            [0.66, ALL_COLORS[1]],  # FN
-            [1, ALL_COLORS[0]],  # TP
+            [0, PRIMARY_COLORS[2]],
+            [0.33, PRIMARY_COLORS[1]],
+            [0.66, PRIMARY_COLORS[1]],
+            [1, PRIMARY_COLORS[0]],
         ]
 
         heatmap = go.Heatmap(
             z=cm,
-            x=labels if labels else ["Class 0", "Class 1"],
-            y=labels if labels else ["Class 0", "Class 1"],
+            x=labels or ["No Stroke", "Stroke"],
+            y=labels or ["No Stroke", "Stroke"],
             hoverongaps=False,
             text=text,
             texttemplate="%{text}",
@@ -504,18 +595,41 @@ def plot_combined_confusion_matrices(
         fig.add_trace(heatmap, row=row, col=col)
 
         fig.update_xaxes(
-            title_text="Predicted", row=row, col=col, tickfont=dict(size=10)
+            title_text="Predicted",
+            row=row,
+            col=col,
+            tickfont={**axis_font, "size": 10},
+            title_standoff=25,
         )
-        fig.update_yaxes(title_text="Actual", row=row, col=col, tickfont=dict(size=10))
+        fig.update_yaxes(
+            title_text="Actual",
+            row=row,
+            col=col,
+            tickfont={**axis_font, "size": 10},
+            title_standoff=25,
+        )
+
+    # Adjust layout based on number of models
+    height = 600 if n_models <= 2 else 1000
+    width = 1200
 
     fig.update_layout(
         title_text="Confusion Matrices for All Models",
         title_x=0.5,
-        height=500,
-        width=1200,
+        title_font={"family": "Styrene B", "size": 24, "color": "#191919"},
+        height=height,
+        width=width,
         showlegend=False,
-        font=dict(size=12),
+        font={**axis_font, "size": 12},
+        plot_bgcolor=BACKGROUND_COLOR,
+        paper_bgcolor=BACKGROUND_COLOR,
+        margin=dict(t=100, b=50, l=50, r=50),
     )
+
+    # Adjust subplot titles
+    for i in fig["layout"]["annotations"]:
+        i["font"] = dict(size=16, family="Styrene B", color="#191919")
+        i["y"] = i["y"] + 0.03
 
     fig.show()
 
@@ -523,17 +637,16 @@ def plot_combined_confusion_matrices(
         fig.write_image(save_path)
 
 
-def extract_feature_importances(model, X, y):
-    """
-    Extract feature importances using permutation importance for models that do not directly provide them.
+def extract_feature_importances(model, X: pd.DataFrame, y: pd.Series) -> np.ndarray:
+    """Extract feature importances using permutation importance for models that do not directly provide them.
 
     Args:
-        model: Trained model
-        X: Feature data (DataFrame)
-        y: Target data (Series or array)
+        model: Trained model.
+        X: Feature data (DataFrame).
+        y: Target data (Series or array).
 
     Returns:
-        Array of feature importances
+        Array of feature importances.
     """
     if hasattr(model, "feature_importances_"):
         return model.feature_importances_
@@ -544,16 +657,20 @@ def extract_feature_importances(model, X, y):
 
 
 def plot_feature_importances(
-    feature_importances: Dict[str, Dict[str, float]], save_path: str = None
+    feature_importances: Dict[str, Dict[str, float]], save_path: Optional[str] = None
 ) -> None:
-    """
-    Plots and optionally saves a bar chart of feature importances across different models.
+    """Plots and optionally saves a bar chart of feature importances across different models.
 
     Args:
         feature_importances: A dictionary with model names as keys and dicts of feature importances as values.
-        save_path: Path to save the image file (optional).
+        save_path: Optional path to save the plot image.
+
+    Returns:
+        None. Displays the plot and optionally saves it to a file.
     """
     fig = go.Figure()
+
+    axis_font = {"family": "Styrene A", "color": "#191919"}
 
     for i, (name, importances) in enumerate(feature_importances.items()):
         fig.add_trace(
@@ -561,7 +678,7 @@ def plot_feature_importances(
                 x=list(importances.keys()),
                 y=list(importances.values()),
                 name=name,
-                marker_color=ALL_COLORS[i % len(ALL_COLORS)],
+                marker_color=PRIMARY_COLORS[i % len(PRIMARY_COLORS)],
                 text=[f"{value:.3f}" for value in importances.values()],
                 textposition="auto",
             )
@@ -574,20 +691,27 @@ def plot_feature_importances(
             "x": 0.5,
             "xanchor": "center",
             "yanchor": "top",
-            "font": dict(size=24),
+            "font": {"family": "Styrene B", "size": 24, "color": "#191919"},
         },
         xaxis_title="Features",
         yaxis_title="Importance",
         barmode="group",
         template="plotly_white",
         legend_title="Models",
-        font=dict(size=14),
+        font={**axis_font, "size": 14},
         height=600,
         width=1200,
+        plot_bgcolor=BACKGROUND_COLOR,
+        paper_bgcolor=BACKGROUND_COLOR,
     )
 
-    fig.update_xaxes(tickangle=-45)
-    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor="LightGrey")
+    fig.update_xaxes(tickangle=-45, tickfont={**axis_font, "size": 12})
+    fig.update_yaxes(
+        showgrid=True,
+        gridwidth=1,
+        gridcolor="LightGrey",
+        tickfont={**axis_font, "size": 12},
+    )
 
     fig.show()
 

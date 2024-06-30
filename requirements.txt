@@ -10,9 +10,11 @@ Babel==2.15.0
 bayesian-optimization==1.5.0
 beautifulsoup4==4.12.3
 bleach==6.1.0
+catboost==1.2.5
 certifi==2024.6.2
 cffi==1.16.0
 charset-normalizer==3.3.2
+cloudpickle==3.0.0
 colorama==0.4.6
 comm==0.2.2
 contourpy==1.2.1
@@ -24,6 +26,7 @@ executing==2.0.1
 fastjsonschema==2.20.0
 fonttools==4.53.0
 fqdn==1.5.1
+graphviz==0.20.3
 h11==0.14.0
 httpcore==1.0.5
 httpx==0.27.0
@@ -52,6 +55,7 @@ jupyterlab_server==2.27.2
 kaleido==0.2.1
 kiwisolver==1.4.5
 lightgbm==4.4.0
+llvmlite==0.43.0
 MarkupSafe==2.1.5
 matplotlib==3.9.0
 matplotlib-inline==0.1.7
@@ -62,6 +66,7 @@ nbformat==5.10.4
 nest-asyncio==1.6.0
 notebook==7.2.1
 notebook_shim==0.2.4
+numba==0.60.0
 numpy==1.26.4
 overrides==7.7.0
 packaging==24.1
@@ -80,6 +85,7 @@ prompt_toolkit==3.0.47
 psutil==6.0.0
 ptyprocess==0.7.0
 pure-eval==0.2.2
+pyaml==24.4.0
 pycparser==2.22
 Pygments==2.18.0
 pyparsing==3.1.2
@@ -94,11 +100,14 @@ rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
 rpds-py==0.18.1
 scikit-learn==1.5.0
+scikit-optimize==0.10.2
 scipy==1.13.1
 seaborn==0.13.2
 Send2Trash==1.8.3
 setuptools==70.1.0
+shap==0.46.0
 six==1.16.0
+slicer==0.0.8
 sniffio==1.3.1
 soupsieve==2.5
 stack-data==0.6.3
@@ -109,6 +118,7 @@ terminado==0.18.1
 threadpoolctl==3.5.0
 tinycss2==1.3.0
 tornado==6.4.1
+tqdm==4.66.4
 traitlets==5.14.3
 types-python-dateutil==2.9.0.20240316
 tzdata==2024.1

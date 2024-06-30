@@ -3,3 +3,4 @@ venv/
 stroke_dataset_first_200_rows.csv
 stroke_risk_analysis.pdf
 __pycache__/
+test.txt
