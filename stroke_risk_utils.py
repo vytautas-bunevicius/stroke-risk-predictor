@@ -436,7 +436,9 @@ def evaluate_model(model, X, y, dataset_name=None, threshold=None, target_recall
     if dataset_name:
         print(f"\nResults on {dataset_name} set:")
 
-    print(classification_report(y, y_pred, zero_division=1))
+    print(
+        classification_report(y, y_pred, zero_division=1, warn_for=())
+    )  # Modified line
     print("Confusion Matrix:")
     print(confusion_matrix(y, y_pred))
     print(f"ROC AUC: {roc_auc_score(y, y_pred_proba):.4f}")
