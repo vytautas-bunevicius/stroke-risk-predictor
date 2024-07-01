@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stroke Risk Predictor</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <header>
+      <nav>
+        <div class="logo"></div>
+      </nav>
+    </header>
+    <main class="container">
+      <h1>Stroke Risk <span class="highlight">Predictor</span></h1>
+      <p class="subtitle">Enter your details to estimate your stroke risk.</p>
+      <div class="flex-container">
+        <div class="left-section">
+          <form id="risk-form">
+            <div class="form-row">
+              <div class="input-group">
+                <label for="age">Age</label>
+                <input type="number" id="age" name="age" required min="0" max="120" />
+              </div>
+              <div class="input-group">
+                <label for="hypertension">Hypertension</label>
+                <select id="hypertension" name="hypertension" required>
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">  
+              <div class="input-group">
+                <label for="heart_disease">Heart Disease</label>
+                <select id="heart_disease" name="heart_disease" required>
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="ever_married">Ever Married</label>
+                <select id="ever_married" name="ever_married" required>
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="input-group">
+                <label for="residence_type">Residence Type</label>
+                <select id="residence_type" name="residence_type" required>
+                  <option value="0">Rural</option>
+                  <option value="1">Urban</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="bmi">BMI</label>
+                <input
+                  type="number"
+                  id="bmi"
+                  name="bmi"
+                  required
+                  min="0"
+                  max="60"
+                  step="0.1"
+                />
+                <button type="button" id="calculate-bmi">Calculate BMI</button>
+              </div>
+            </div>
+            <div id="bmi-calculator" class="hidden">
+              <div class="input-group">
+                <label for="height">Height (cm)</label>
+                <input type="number" id="height" min="0" step="0.1" />
+              </div>
+              <div class="input-group">
+                <label for="weight">Weight (kg)</label>
+                <input type="number" id="weight" min="0" step="0.1" />
+              </div>
+              <button type="button" id="submit-bmi">Calculate</button>
+            </div>
+            <div class="form-row">
+              <div class="input-group">
+                <label for="gender">Gender</label>
+                <select id="gender" name="gender" required>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="smoking_status">Smoking Status</label>
+                <select id="smoking_status" name="smoking_status" required>
+                  <option value="never_smoked">Never Smoked</option>
+                  <option value="formerly_smoked">Formerly Smoked</option>
+                  <option value="smokes">Smokes</option>
+                  <option value="unknown">Unknown</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group full-width">
+              <label for="glucose_level">Average Glucose Level (mg/dL)</label>
+              <input
+                type="number"
+                id="glucose_level"
+                name="glucose_level"
+                min="0"
+                step="0.1"
+                placeholder="Leave blank if unknown"
+              />
+            </div>
+            <button type="submit">Predict Risk</button>
+          </form>
+        </div>
+        <div class="right-section">
+          <div id="prediction-result">
+            <h2>Prediction Result</h2>
+            <p id="result-text"></p>
+            <div id="risk-factors-chart-container">
+              <canvas id="risk-factors-chart"></canvas>
+            </div>
+            <div id="feature-explanation">
+              <h3>Feature Explanations</h3>
+              <ul>
+                <li><strong>Age:</strong> The age of the individual.</li>
+                <li><strong>Hypertension:</strong> Whether the individual has hypertension.</li>
+                <li><strong>Heart Disease:</strong> Whether the individual has any heart disease.</li>
+                <li><strong>Ever Married:</strong> Whether the individual has ever been married.</li>
+                <li><strong>Residence Type:</strong> Whether the individual lives in an urban or rural area.</li>
+                <li><strong>BMI:</strong> Body Mass Index, calculated from height and weight.</li>
+                <li><strong>Gender:</strong> The gender of the individual.</li>
+                <li><strong>Smoking Status:</strong> The smoking habits of the individual.</li>
+                <li><strong>Average Glucose Level:</strong> The average glucose level in the blood.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  </body>
+</html>

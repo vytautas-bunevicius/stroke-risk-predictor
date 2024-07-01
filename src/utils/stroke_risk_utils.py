@@ -437,7 +437,7 @@ def evaluate_model(model, X, y, dataset_name=None, threshold=None, target_recall
         print(f"\nResults on {dataset_name} set:")
 
     print(
-        classification_report(y, y_pred, zero_division=1, warn_for=())
+        classification_report(y, y_pred, zero_division=1)
     )  # Modified line
     print("Confusion Matrix:")
     print(confusion_matrix(y, y_pred))
