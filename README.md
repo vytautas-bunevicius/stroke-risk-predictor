@@ -51,7 +51,7 @@ To set up this project locally, follow these steps:
 
 5. **Run the Flask application**:
     ```sh
-    python main.py
+    python src/app.py
     ```
 
 6. **Open a web browser and navigate to** `http://localhost:5000` **to view the application**.
