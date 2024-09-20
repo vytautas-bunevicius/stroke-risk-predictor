@@ -1,50 +1,50 @@
-"""
-Data analysis and visualization tools for machine learning models.
+"""Utilities for stroke risk analysis and model evaluation.
 
-This module provides a collection of functions for analyzing and visualizing
-data, as well as evaluating and comparing machine learning models. It includes
-tools for creating various types of plots, detecting anomalies, calculating
-statistical measures, and assessing model performance.
-
-The module is designed to work with pandas DataFrames and various machine
-learning models, particularly those from scikit-learn, XGBoost, LightGBM, and
-CatBoost libraries.
+This module provides functions for analyzing stroke risk factors and evaluating
+machine learning models for stroke prediction. It includes tools for data
+visualization, statistical analysis, anomaly detection, and model performance
+evaluation.
 
 Functions:
-    plot_combined_histograms: Plot histograms for multiple features.
+    plot_combined_histograms: Plot histograms for specified features.
     plot_combined_bar_charts: Plot bar charts for categorical features.
     plot_combined_boxplots: Plot boxplots for numerical features.
     plot_correlation_matrix: Plot a correlation matrix for numerical features.
     detect_anomalies_iqr: Detect anomalies using the IQR method.
-    flag_anomalies: Flag anomalies in specified features.
+    flag_anomalies: Flag anomalies in a DataFrame.
     calculate_cramers_v: Calculate Cramer's V for categorical variables.
-    evaluate_model: Evaluate a model's performance with various metrics.
+    evaluate_model: Evaluate a model's performance.
     plot_model_performance: Plot performance metrics for multiple models.
     plot_combined_confusion_matrices: Plot confusion matrices for multiple models.
     extract_feature_importances: Extract feature importances from a model.
-    plot_feature_importances: Plot feature importances for multiple models.
+    plot_feature_importances: Plot feature importances across different models.
 
-The module uses Plotly for creating interactive and customizable visualizations,
-with a consistent color scheme and styling across all plots.
+Usage:
+    import stroke_risk_utils as sru
+
+    # Plot histograms of risk factors
+    sru.plot_combined_histograms(df, ['age', 'bmi'], nbins=30)
+
+    # Evaluate stroke prediction model
+    results = sru.evaluate_model(model, X_test, y_test, 'Test Set')
+
+    # Plot feature importances for risk factors
+    sru.plot_feature_importances(feature_importances)
+
+Note:
+    This module uses a specific color scheme for visualizations, customizable
+    via global color variables.
 """
 
-import warnings
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
-import lightgbm as lgb
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import plotly.subplots as sp
-import xgboost as xgb
-from catboost import CatBoostClassifier
 from plotly.subplots import make_subplots
 from scipy import stats
-from scipy.stats import chi2_contingency
-from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.inspection import permutation_importance
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     average_precision_score,
     balanced_accuracy_score,
@@ -56,8 +56,6 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 
 
 BACKGROUND_COLOR = "#EEECE2"
@@ -144,7 +142,7 @@ def plot_combined_histograms(
         font={**axis_font, "size": 12},
     )
 
-    fig.show()
+    return fig
 
     if save_path:
         fig.write_image(save_path)
@@ -228,7 +226,7 @@ def plot_combined_bar_charts(
             font={**axis_font, "size": 12},
         )
 
-        fig.show()
+        return fig
 
         if save_path:
             file_path = f"{save_path}_chunk_{chunk_index + 1}.png"
@@ -301,7 +299,7 @@ def plot_combined_boxplots(
         font={**axis_font, "size": 12},
     )
 
-    fig.show()
+    return fig
 
     if save_path:
         fig.write_image(save_path)
@@ -321,7 +319,6 @@ def plot_correlation_matrix(
     """
     numerical_df = df[numerical_features]
     correlation_matrix = numerical_df.corr()
-
     fig = px.imshow(
         correlation_matrix,
         text_auto=True,
@@ -345,8 +342,6 @@ def plot_correlation_matrix(
         xaxis=dict(tickangle=-45, title_font=dict(size=18), tickfont=dict(size=14)),
         yaxis=dict(title_font=dict(size=18), tickfont=dict(size=14)),
     )
-
-    fig.show()
 
     if save_path:
         fig.write_image(save_path)
@@ -441,13 +436,13 @@ def calculate_cramers_v(contingency_table):
     return cramers_v
 
 
-def evaluate_model(model, X, y, dataset_name=None, threshold=None, target_recall=None):
+def evaluate_model(model, x, y, dataset_name=None, threshold=None, target_recall=None):
     """
     Evaluate a model's performance with optional threshold adjustment.
 
     Args:
         model (model): The trained model to evaluate.
-        X (array): Features.
+        x (array): Features.
         y (array): True labels.
         dataset_name (str, optional): Name of the dataset for display purposes.
         threshold (float, optional): Custom threshold for classification.
@@ -456,7 +451,7 @@ def evaluate_model(model, X, y, dataset_name=None, threshold=None, target_recall
     Returns:
         dict: Dictionary containing various performance metrics.
     """
-    y_pred_proba = model.predict_proba(X)[:, 1]
+    y_pred_proba = model.predict_proba(x)[:, 1]
 
     if target_recall is not None:
         precisions, recalls, thresholds = precision_recall_curve(y, y_pred_proba)
@@ -467,7 +462,7 @@ def evaluate_model(model, X, y, dataset_name=None, threshold=None, target_recall
     if threshold is not None:
         y_pred = (y_pred_proba >= threshold).astype(int)
     else:
-        y_pred = model.predict(X)
+        y_pred = model.predict(x)
 
     if dataset_name:
         print(f"\nResults on {dataset_name} set:")
@@ -558,7 +553,7 @@ def plot_model_performance(
     fig.update_yaxes(range=[0, 1], showgrid=True, gridwidth=1, gridcolor="LightGrey")
     fig.update_xaxes(tickangle=-45, tickfont={**axis_font, "size": 12})
 
-    fig.show()
+    return fig
 
     if save_path:
         fig.write_image(save_path)
@@ -689,13 +684,13 @@ def plot_combined_confusion_matrices(
         i["font"] = dict(size=16, family="Styrene B", color="#191919")
         i["y"] = i["y"] + 0.03
 
-    fig.show()
+    return fig
 
     if save_path:
         fig.write_image(save_path)
 
 
-def extract_feature_importances(model, X: pd.DataFrame, y: pd.Series) -> np.ndarray:
+def extract_feature_importances(model, x: pd.DataFrame, y: pd.Series) -> np.ndarray:
     """
     Extract feature importances using permutation importance for models that do
     not directly provide them.
@@ -711,7 +706,7 @@ def extract_feature_importances(model, X: pd.DataFrame, y: pd.Series) -> np.ndar
     if hasattr(model, "feature_importances_"):
         return model.feature_importances_
     else:
-        perm_import = permutation_importance(model, X, y, n_repeats=30, random_state=42)
+        perm_import = permutation_importance(model, x, y, n_repeats=30, random_state=42)
         return perm_import.importances_mean
 
 
@@ -775,7 +770,7 @@ def plot_feature_importances(
         tickfont={**axis_font, "size": 12},
     )
 
-    fig.show()
-
+    return fig
+    
     if save_path:
         fig.write_image(save_path)

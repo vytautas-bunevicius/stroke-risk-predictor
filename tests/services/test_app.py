@@ -10,7 +10,7 @@ sys.path.insert(0, str(src_path))
 import pytest
 from flask import template_rendered
 from contextlib import contextmanager
-from app import app, predict_bp
+from app import app
 
 
 @pytest.fixture

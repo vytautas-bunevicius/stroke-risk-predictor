@@ -1,11 +1,53 @@
+"""Unit tests for the stroke risk prediction API.
+
+This module contains pytest-based unit tests for the Flask API endpoints
+related to stroke risk prediction.
+
+Note:
+    This module modifies the Python path to include the project's root directory.
+    This ensures that the 'src' module can be imported correctly regardless of
+    where the tests are run from.
+
+Functions:
+    test_predict_success: Tests the /predict endpoint with valid input.
+    test_predict_failure: Tests the /predict endpoint's error handling.
+    test_features: Tests the /features endpoint.
+
+Fixtures:
+    client: Creates a Flask test client for the application.
+
+Usage:
+    pytest tests/api/test_predict.py
+
+Troubleshooting:
+    If imports still fail, verify your project structure and ensure you're
+    running pytest from the project's root directory.
+"""
+
+import sys
+from pathlib import Path
+
+# Add the project root directory to the Python path
+project_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+from unittest.mock import patch
+
 import pytest
 from flask import Flask
+
 from src.api.predict import predict_bp
-from unittest.mock import patch
 
 
 @pytest.fixture
 def client():
+    """Creates a Flask test client fixture.
+    This fixture sets up a Flask application instance, registers the
+    predict_bp blueprint, and provides a test client for interacting
+    with the application during tests.
+    Yields:
+        FlaskClient: A test client for the Flask application.
+    """
     app = Flask(__name__)
     app.register_blueprint(predict_bp)
     with app.test_client() as client:
@@ -14,8 +56,7 @@ def client():
 
 def test_predict_success(client):
     """Test the /predict endpoint with valid input."""
-    with patch(
-            "src.services.model_service.predict_stroke_risk") as mock_predict:
+    with patch("src.services.model_service.predict_stroke_risk") as mock_predict:
         mock_predict.return_value = {
             "prediction": 0.5085650479735153,
             "feature_importances": {
@@ -50,8 +91,7 @@ def test_predict_success(client):
 
 def test_predict_failure(client):
     """Test the /predict endpoint handling an exception."""
-    with patch(
-            "src.services.model_service.predict_stroke_risk") as mock_predict:
+    with patch("src.services.model_service.predict_stroke_risk") as mock_predict:
         mock_predict.side_effect = Exception("Test Error")
         response = client.post("/predict", json={"feature1": "invalid"})
         assert response.status_code == 400
