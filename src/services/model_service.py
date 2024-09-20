@@ -79,7 +79,7 @@ def predict_stroke_risk(features: Dict[str, Any]) -> Dict[str, Any]:
             "feature_importances": feature_importances,
         }
 
-    except Exception as e:
+    except Exception as e: # pylint: disable=broad-exception-caught
         logger.exception("Error in predict_stroke_risk: %s", str(e))
         return {"success": False, "error": str(e)}
 

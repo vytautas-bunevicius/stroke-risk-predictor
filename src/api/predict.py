@@ -26,7 +26,8 @@ def predict():
             ),
             200,
         )
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
+        print(e)
         return (
             jsonify(
                 {

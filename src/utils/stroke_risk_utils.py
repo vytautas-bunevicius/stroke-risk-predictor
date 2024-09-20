@@ -314,7 +314,8 @@ def plot_correlation_matrix(
 
     Args:
         df (pd.DataFrame): DataFrame containing the data.
-        numerical_features (List[str]): List of numerical features to include in the correlation matrix.
+        numerical_features (List[str]): List of numerical
+        features to include in the correlation matrix.
         save_path (str): Path to save the image file (optional).
     """
     numerical_df = df[numerical_features]
@@ -394,14 +395,16 @@ def detect_anomalies_iqr(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
 
 def flag_anomalies(df: pd.DataFrame, features: List[str]) -> pd.Series:
     """
-    Identify and flag anomalies in a DataFrame based on the Interquartile Range (IQR) method for specified features.
+    Identify and flag anomalies in a DataFrame based on the Interquartile Range (IQR)
+    method for specified features.
 
     Args:
         df (pd.DataFrame): The input DataFrame containing the data.
         features (List[str]): A list of column names in the DataFrame to check for anomalies.
 
     Returns:
-        pd.Series: A Series of boolean values where True indicates an anomaly in any of the specified features.
+        pd.Series: A Series of boolean values where True indicates
+        an anomaly in any of the specified features.
     """
     anomaly_flags = pd.Series(False, index=df.index)
 
@@ -453,7 +456,7 @@ def evaluate_model(model, x, y, dataset_name=None, threshold=None, target_recall
     y_pred_proba = model.predict_proba(x)[:, 1]
 
     if target_recall is not None:
-        precisions, recalls, thresholds = precision_recall_curve(y, y_pred_proba)
+        _, recalls, thresholds = precision_recall_curve(y, y_pred_proba)
         idx = np.argmin(np.abs(recalls - target_recall))
         threshold = thresholds[idx]
         print(f"Adjusted threshold: {threshold:.4f}")
@@ -610,7 +613,7 @@ def plot_combined_confusion_matrices(
 
     axis_font = {"family": "Styrene A", "color": "#191919"}
 
-    for i, (name, model_results) in enumerate(results.items()):
+    for i, (name, _) in enumerate(results.items()):
         row = i // cols + 1
         col = i % cols + 1
 
@@ -718,7 +721,8 @@ def plot_feature_importances(
     different models.
 
     Args:
-        feature_importances: A dictionary with model names as keys and dicts of feature importances as values.
+        feature_importances: A dictionary with model names
+        as keys and dicts of feature importances as values.
         save_path: Optional path to save the plot image.
 
     Returns:

@@ -2,23 +2,23 @@
 
 import sys
 from pathlib import Path
+from contextlib import contextmanager
+
+import pytest
+from flask import template_rendered
 
 src_path = Path(__file__).resolve().parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from contextlib import contextmanager  # noqa: E402
-
-import pytest  # noqa: E402
-from flask import template_rendered  # noqa: E402
-
+# pylint: disable=import-error, wrong-import-position
 from app import app as flask_app  # noqa: E402
 
 
 @pytest.fixture
-def test_client():
+def client():
     """Creates a test client for the Flask application."""
-    with flask_app.test_client() as client:
-        yield client
+    with flask_app.test_client() as test_client:
+        yield test_client
 
 
 @contextmanager
@@ -26,7 +26,7 @@ def captured_templates(app):
     """Captures templates rendered during a request."""
     recorded = []
 
-    def record(sender, template, context, **extra):
+    def record(_, template, context):
         recorded.append((template, context))
 
     template_rendered.connect(record, app)
@@ -36,20 +36,21 @@ def captured_templates(app):
         template_rendered.disconnect(record, app)
 
 
-def test_index_route(test_client):
+def test_index_route(client): # pylint: disable=redefined-outer-name
     """Test the index route."""
     with captured_templates(flask_app) as templates:
-        response = test_client.get("/")
+        response = client.get("/")
         assert response.status_code == 200
         assert len(templates) == 1
-        template, context = templates[0]
+        template, _ = templates[0]
         assert template.name == "index.html"
 
 
 def test_api_blueprint_registered():
     """Test that the API blueprint is registered."""
     assert any(
-        blueprint.name == "predict" for blueprint in flask_app.blueprints.values())
+        blueprint.name == "predict" for blueprint in flask_app.blueprints.values()
+    )
 
 
 def test_static_folder():

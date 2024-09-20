@@ -37,39 +37,39 @@ def sample_df():
     )
 
 
-def test_plot_combined_histograms(sample_df):
+def test_plot_combined_histograms(sample_df): # pylint: disable=redefined-outer-name
     """Test if plot_combined_histograms function returns a Figure object."""
     fig = plot_combined_histograms(sample_df, ["age", "bmi"])
     assert isinstance(fig, Figure)
 
 
-def test_plot_combined_bar_charts(sample_df):
+def test_plot_combined_bar_charts(sample_df): # pylint: disable=redefined-outer-name
     """Test if plot_combined_bar_charts function returns a Figure object."""
     fig = plot_combined_bar_charts(sample_df, ["gender"])
     assert isinstance(fig, Figure)
 
 
-def test_plot_combined_boxplots(sample_df):
+def test_plot_combined_boxplots(sample_df): # pylint: disable=redefined-outer-name
     """Test if plot_combined_boxplots function returns a Figure object."""
     fig = plot_combined_boxplots(sample_df, ["age", "bmi"])
     assert isinstance(fig, Figure)
 
 
-def test_plot_correlation_matrix(sample_df):
+def test_plot_correlation_matrix(sample_df): # pylint: disable=redefined-outer-name
     """Test if plot_correlation_matrix function calls px.imshow()."""
     with patch("plotly.express.imshow") as mock_imshow:
         plot_correlation_matrix(sample_df, ["age", "bmi"])
         mock_imshow.assert_called_once()
 
 
-def test_detect_anomalies_iqr(sample_df):
+def test_detect_anomalies_iqr(sample_df): # pylint: disable=redefined-outer-name
     """Test if detect_anomalies_iqr returns a DataFrame."""
     anomalies = detect_anomalies_iqr(sample_df, ["age", "bmi"])
     assert isinstance(anomalies, pd.DataFrame)
     assert set(anomalies.columns) == {"age", "bmi"}
 
 
-def test_flag_anomalies(sample_df):
+def test_flag_anomalies(sample_df): # pylint: disable=redefined-outer-name
     """Test if flag_anomalies returns a boolean Series."""
     flags = flag_anomalies(sample_df, ["age", "bmi"])
     assert isinstance(flags, pd.Series)
@@ -95,7 +95,7 @@ def mock_model():
     return model
 
 
-def test_evaluate_model(mock_model, sample_df):
+def test_evaluate_model(mock_model, sample_df): # pylint: disable=redefined-outer-name
     """Test if evaluate_model returns a dict with expected keys."""
     x = sample_df[["age", "bmi"]]
     y = sample_df["stroke"]
@@ -134,7 +134,7 @@ def test_plot_combined_confusion_matrices():
     assert isinstance(fig, Figure)
 
 
-def test_extract_feature_importances(mock_model, sample_df):
+def test_extract_feature_importances(mock_model, sample_df): # pylint: disable=redefined-outer-name
     """Test if extract_feature_importances returns expected array."""
     x = sample_df[["age", "bmi"]]
     y = sample_df["stroke"]
