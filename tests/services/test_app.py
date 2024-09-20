@@ -47,7 +47,8 @@ def test_index_route(client):
 
 def test_api_blueprint_registered():
     """Test that the API blueprint is registered."""
-    assert any(blueprint.name == "predict" for blueprint in app.blueprints.values())
+    assert any(
+        blueprint.name == "predict" for blueprint in app.blueprints.values())
     # Note: url_prefix assertion removed as it's not set in app.py
 
 

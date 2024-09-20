@@ -14,7 +14,8 @@ def client():
 
 def test_predict_success(client):
     """Test the /predict endpoint with valid input."""
-    with patch("src.services.model_service.predict_stroke_risk") as mock_predict:
+    with patch(
+            "src.services.model_service.predict_stroke_risk") as mock_predict:
         mock_predict.return_value = {
             "prediction": 0.5085650479735153,
             "feature_importances": {
@@ -49,7 +50,8 @@ def test_predict_success(client):
 
 def test_predict_failure(client):
     """Test the /predict endpoint handling an exception."""
-    with patch("src.services.model_service.predict_stroke_risk") as mock_predict:
+    with patch(
+            "src.services.model_service.predict_stroke_risk") as mock_predict:
         mock_predict.side_effect = Exception("Test Error")
         response = client.post("/predict", json={"feature1": "invalid"})
         assert response.status_code == 400

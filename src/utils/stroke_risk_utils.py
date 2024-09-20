@@ -1,3 +1,33 @@
+"""
+Data analysis and visualization tools for machine learning models.
+
+This module provides a collection of functions for analyzing and visualizing
+data, as well as evaluating and comparing machine learning models. It includes
+tools for creating various types of plots, detecting anomalies, calculating
+statistical measures, and assessing model performance.
+
+The module is designed to work with pandas DataFrames and various machine
+learning models, particularly those from scikit-learn, XGBoost, LightGBM, and
+CatBoost libraries.
+
+Functions:
+    plot_combined_histograms: Plot histograms for multiple features.
+    plot_combined_bar_charts: Plot bar charts for categorical features.
+    plot_combined_boxplots: Plot boxplots for numerical features.
+    plot_correlation_matrix: Plot a correlation matrix for numerical features.
+    detect_anomalies_iqr: Detect anomalies using the IQR method.
+    flag_anomalies: Flag anomalies in specified features.
+    calculate_cramers_v: Calculate Cramer's V for categorical variables.
+    evaluate_model: Evaluate a model's performance with various metrics.
+    plot_model_performance: Plot performance metrics for multiple models.
+    plot_combined_confusion_matrices: Plot confusion matrices for multiple models.
+    extract_feature_importances: Extract feature importances from a model.
+    plot_feature_importances: Plot feature importances for multiple models.
+
+The module uses Plotly for creating interactive and customizable visualizations,
+with a consistent color scheme and styling across all plots.
+"""
+
 import warnings
 from typing import Dict, List, Optional, Tuple
 
@@ -50,7 +80,8 @@ def plot_combined_histograms(
     nbins: int = 40,
     save_path: Optional[str] = None,
 ) -> None:
-    """Plots combined histograms for specified features in the DataFrame.
+    """
+    Plots combined histograms for specified features in the DataFrame.
 
     Args:
         df: DataFrame containing the features to plot.
@@ -125,7 +156,9 @@ def plot_combined_bar_charts(
     max_features_per_plot: int = 3,
     save_path: Optional[str] = None,
 ) -> None:
-    """Plots combined bar charts for specified categorical features in the DataFrame.
+    """
+    Plots combined bar charts for specified categorical features in the
+    DataFrame.
 
     Args:
         df: DataFrame containing the features to plot.
@@ -205,7 +238,8 @@ def plot_combined_bar_charts(
 def plot_combined_boxplots(
     df: pd.DataFrame, features: List[str], save_path: Optional[str] = None
 ) -> None:
-    """Plots combined boxplots for specified numerical features in the DataFrame.
+    """
+    Plots combined boxplots for specified numerical features in the DataFrame.
 
     Args:
         df: DataFrame containing the features to plot.
@@ -276,7 +310,9 @@ def plot_combined_boxplots(
 def plot_correlation_matrix(
     df: pd.DataFrame, numerical_features: List[str], save_path: str = None
 ) -> None:
-    """Plots the correlation matrix of the specified numerical features in the DataFrame.
+    """
+    Plots the correlation matrix of the specified numerical features in the
+    DataFrame.
 
     Args:
         df (pd.DataFrame): DataFrame containing the data.
@@ -317,7 +353,8 @@ def plot_correlation_matrix(
 
 
 def detect_anomalies_iqr(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
-    """Detects anomalies in multiple features using the IQR method.
+    """
+    Detects anomalies in multiple features using the IQR method.
 
     Args:
         df (pd.DataFrame): DataFrame containing the data.
@@ -361,13 +398,13 @@ def detect_anomalies_iqr(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
     return anomalies
 
 
-def flag_anomalies(df, features):
+def flag_anomalies(df: pd.DataFrame, features: List[str]) -> pd.Series:
     """
     Identify and flag anomalies in a DataFrame based on the Interquartile Range (IQR) method for specified features.
 
     Args:
         df (pd.DataFrame): The input DataFrame containing the data.
-        features (list of str): A list of column names in the DataFrame to check for anomalies.
+        features (List[str]): A list of column names in the DataFrame to check for anomalies.
 
     Returns:
         pd.Series: A Series of boolean values where True indicates an anomaly in any of the specified features.
@@ -375,11 +412,11 @@ def flag_anomalies(df, features):
     anomaly_flags = pd.Series(False, index=df.index)
 
     for feature in features:
-        Q1 = df[feature].quantile(0.25)
-        Q3 = df[feature].quantile(0.75)
-        IQR = Q3 - Q1
-        lower_bound = Q1 - 1.5 * IQR
-        upper_bound = Q3 + 1.5 * IQR
+        first_quartile = df[feature].quantile(0.25)
+        third_quartile = df[feature].quantile(0.75)
+        interquartile_range = third_quartile - first_quartile
+        lower_bound = first_quartile - 1.5 * interquartile_range
+        upper_bound = third_quartile + 1.5 * interquartile_range
 
         feature_anomalies = (df[feature] < lower_bound) | (df[feature] > upper_bound)
         anomaly_flags |= feature_anomalies
@@ -435,9 +472,7 @@ def evaluate_model(model, X, y, dataset_name=None, threshold=None, target_recall
     if dataset_name:
         print(f"\nResults on {dataset_name} set:")
 
-    print(
-        classification_report(y, y_pred, zero_division=1)
-    )
+    print(classification_report(y, y_pred, zero_division=1))
     print("Confusion Matrix:")
     print(confusion_matrix(y, y_pred))
     print(f"ROC AUC: {roc_auc_score(y, y_pred_proba):.4f}")
@@ -465,7 +500,9 @@ def plot_model_performance(
     metrics: List[str],
     save_path: Optional[str] = None,
 ) -> None:
-    """Plots and optionally saves a bar chart of model performance metrics with legend on the right.
+    """
+    Plots and optionally saves a bar chart of model performance metrics with
+    legend on the right.
 
     Args:
         results: A dictionary with model names as keys and dicts of performance metrics as values.
@@ -534,6 +571,34 @@ def plot_combined_confusion_matrices(
     labels: Optional[List[str]] = None,
     save_path: Optional[str] = None,
 ) -> None:
+    """
+    Plot confusion matrices for multiple models in a single figure.
+
+    This function creates a combined plot of confusion matrices for multiple
+    models, allowing for easy comparison of model performance. It uses a
+    heatmap representation with color coding and percentage annotations.
+
+    Args:
+        results: A dictionary where keys are model names and values are
+            dictionaries containing model performance metrics.
+        y_test: True labels of the test set.
+        y_pred_dict: A dictionary where keys are model names and values are
+            arrays of predicted labels.
+        labels: Optional custom labels for the confusion matrix axes. If None,
+            default labels ["No Stroke", "Stroke"] will be used.
+        save_path: Optional file path to save the plot as an image.
+
+    Returns:
+        None. The function displays the plot and optionally saves it to a file.
+
+    Raises:
+        ValueError: If the number of models in results and y_pred_dict don't match.
+
+    Note:
+        This function uses plotly for visualization and assumes binary
+        classification (e.g., stroke prediction). The plot is styled with
+        predefined color schemes and fonts.
+    """
     n_models = len(results)
 
     if n_models <= 2:
@@ -631,7 +696,9 @@ def plot_combined_confusion_matrices(
 
 
 def extract_feature_importances(model, X: pd.DataFrame, y: pd.Series) -> np.ndarray:
-    """Extract feature importances using permutation importance for models that do not directly provide them.
+    """
+    Extract feature importances using permutation importance for models that do
+    not directly provide them.
 
     Args:
         model: Trained model.
@@ -649,9 +716,12 @@ def extract_feature_importances(model, X: pd.DataFrame, y: pd.Series) -> np.ndar
 
 
 def plot_feature_importances(
-    feature_importances: Dict[str, Dict[str, float]], save_path: Optional[str] = None
+    feature_importances: Dict[str, Dict[str, float]],
+    save_path: Optional[str] = None,
 ) -> None:
-    """Plots and optionally saves a bar chart of feature importances across different models.
+    """
+    Plots and optionally saves a bar chart of feature importances across
+    different models.
 
     Args:
         feature_importances: A dictionary with model names as keys and dicts of feature importances as values.

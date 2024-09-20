@@ -27,14 +27,12 @@ from src.utils.stroke_risk_utils import (
 @pytest.fixture
 def sample_df():
     """Create a sample DataFrame for testing."""
-    return pd.DataFrame(
-        {
-            "age": [25, 30, 35, 40, 45],
-            "bmi": [20, 22, 24, 26, 28],
-            "gender": ["Male", "Female", "Male", "Female", "Male"],
-            "stroke": [0, 0, 1, 0, 1],
-        }
-    )
+    return pd.DataFrame({
+        "age": [25, 30, 35, 40, 45],
+        "bmi": [20, 22, 24, 26, 28],
+        "gender": ["Male", "Female", "Male", "Female", "Male"],
+        "stroke": [0, 0, 1, 0, 1],
+    })
 
 
 def test_plot_combined_histograms(sample_df):
@@ -91,9 +89,9 @@ def test_calculate_cramers_v():
 def mock_model():
     """Create a mock model for testing."""
     model = MagicMock()
-    model.predict_proba.return_value = np.array(
-        [[0.1, 0.9], [0.8, 0.2], [0.3, 0.7], [0.6, 0.4], [0.4, 0.6]]
-    )
+    model.predict_proba.return_value = np.array([[0.1, 0.9], [0.8, 0.2],
+                                                 [0.3, 0.7], [0.6, 0.4],
+                                                 [0.4, 0.6]])
     model.predict.return_value = np.array([1, 0, 1, 0, 1])
     return model
 
@@ -118,8 +116,14 @@ def test_evaluate_model(mock_model, sample_df):
 def test_plot_model_performance():
     """Test if plot_model_performance calls Figure.show()."""
     results = {
-        "Model1": {"accuracy": 0.8, "precision": 0.7},
-        "Model2": {"accuracy": 0.75, "precision": 0.8},
+        "Model1": {
+            "accuracy": 0.8,
+            "precision": 0.7
+        },
+        "Model2": {
+            "accuracy": 0.75,
+            "precision": 0.8
+        },
     }
     with patch("plotly.graph_objects.Figure.show") as mock_show:
         plot_model_performance(results, ["accuracy", "precision"])
@@ -153,8 +157,14 @@ def test_extract_feature_importances(mock_model, sample_df):
 def test_plot_feature_importances():
     """Test if plot_feature_importances calls Figure.show()."""
     feature_importances = {
-        "Model1": {"age": 0.6, "bmi": 0.4},
-        "Model2": {"age": 0.5, "bmi": 0.5},
+        "Model1": {
+            "age": 0.6,
+            "bmi": 0.4
+        },
+        "Model2": {
+            "age": 0.5,
+            "bmi": 0.5
+        },
     }
     with patch("plotly.graph_objects.Figure.show") as mock_show:
         plot_feature_importances(feature_importances)
