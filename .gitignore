@@ -5,3 +5,5 @@ stroke_risk_analysis.pdf
 __pycache__/
 test.txt
 catboost_info/
+.idx
+.vscode
