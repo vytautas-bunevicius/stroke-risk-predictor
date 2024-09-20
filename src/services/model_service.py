@@ -1,9 +1,10 @@
 """Service module for stroke risk prediction model."""
 
-import joblib
-from pathlib import Path
 import logging
-from typing import Dict, List, Any
+from pathlib import Path
+from typing import Any, Dict, List
+
+import joblib
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

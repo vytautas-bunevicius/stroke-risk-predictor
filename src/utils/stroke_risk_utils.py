@@ -427,7 +427,6 @@ def evaluate_model(model, X, y, dataset_name=None, threshold=None, target_recall
         threshold = thresholds[idx]
         print(f"Adjusted threshold: {threshold:.4f}")
 
-    # Use the threshold if provided or adjusted, otherwise use default 0.5
     if threshold is not None:
         y_pred = (y_pred_proba >= threshold).astype(int)
     else:
@@ -438,7 +437,7 @@ def evaluate_model(model, X, y, dataset_name=None, threshold=None, target_recall
 
     print(
         classification_report(y, y_pred, zero_division=1)
-    )  # Modified line
+    )
     print("Confusion Matrix:")
     print(confusion_matrix(y, y_pred))
     print(f"ROC AUC: {roc_auc_score(y, y_pred_proba):.4f}")
@@ -605,7 +604,6 @@ def plot_combined_confusion_matrices(
             title_standoff=25,
         )
 
-    # Adjust layout based on number of models
     height = 600 if n_models <= 2 else 1000
     width = 1200
 
@@ -622,7 +620,6 @@ def plot_combined_confusion_matrices(
         margin=dict(t=100, b=50, l=50, r=50),
     )
 
-    # Adjust subplot titles
     for i in fig["layout"]["annotations"]:
         i["font"] = dict(size=16, family="Styrene B", color="#191919")
         i["y"] = i["y"] + 0.03
@@ -647,7 +644,6 @@ def extract_feature_importances(model, X: pd.DataFrame, y: pd.Series) -> np.ndar
     if hasattr(model, "feature_importances_"):
         return model.feature_importances_
     else:
-        # Calculate permutation importance
         perm_import = permutation_importance(model, X, y, n_repeats=30, random_state=42)
         return perm_import.importances_mean
 
