@@ -142,10 +142,10 @@ def plot_combined_histograms(
         font={**axis_font, "size": 12},
     )
 
-    return fig
-
     if save_path:
         fig.write_image(save_path)
+
+    return fig
 
 
 def plot_combined_bar_charts(
@@ -226,11 +226,11 @@ def plot_combined_bar_charts(
             font={**axis_font, "size": 12},
         )
 
-        return fig
-
         if save_path:
             file_path = f"{save_path}_chunk_{chunk_index + 1}.png"
             fig.write_image(file_path)
+
+        return fig
 
 
 def plot_combined_boxplots(
@@ -299,10 +299,10 @@ def plot_combined_boxplots(
         font={**axis_font, "size": 12},
     )
 
-    return fig
-
     if save_path:
         fig.write_image(save_path)
+
+    return fig
 
 
 def plot_correlation_matrix(
@@ -391,7 +391,6 @@ def detect_anomalies_iqr(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
         anomalies = pd.DataFrame(columns=features)
 
     return anomalies
-
 
 def flag_anomalies(df: pd.DataFrame, features: List[str]) -> pd.Series:
     """
@@ -553,10 +552,10 @@ def plot_model_performance(
     fig.update_yaxes(range=[0, 1], showgrid=True, gridwidth=1, gridcolor="LightGrey")
     fig.update_xaxes(tickangle=-45, tickfont={**axis_font, "size": 12})
 
-    return fig
-
     if save_path:
         fig.write_image(save_path)
+
+    return fig
 
 
 def plot_combined_confusion_matrices(
@@ -684,10 +683,10 @@ def plot_combined_confusion_matrices(
         i["font"] = dict(size=16, family="Styrene B", color="#191919")
         i["y"] = i["y"] + 0.03
 
-    return fig
-
     if save_path:
         fig.write_image(save_path)
+
+    return fig
 
 
 def extract_feature_importances(model, x: pd.DataFrame, y: pd.Series) -> np.ndarray:
@@ -770,7 +769,7 @@ def plot_feature_importances(
         tickfont={**axis_font, "size": 12},
     )
 
-    return fig
-    
     if save_path:
         fig.write_image(save_path)
+
+    return fig

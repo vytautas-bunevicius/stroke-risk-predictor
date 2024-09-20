@@ -31,10 +31,10 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from unittest.mock import patch
+from unittest.mock import patch  # noqa: E402
 
 import pytest
-from flask import Flask
+from flask import Flask  # noqa: E402
 
 from src.api.predict import predict_bp
 
