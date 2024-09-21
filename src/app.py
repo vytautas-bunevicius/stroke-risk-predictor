@@ -6,8 +6,8 @@ import sys
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_root)
 
-from flask import Flask, render_template  # noqa: E402
-from src.api.predict import predict_bp  # noqa: E402
+from flask import Flask, render_template  # pylint: disable=wrong-import-position
+from src.api.predict import predict_bp  # pylint: disable=wrong-import-position
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
