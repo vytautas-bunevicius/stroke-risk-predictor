@@ -10,7 +10,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 MODEL_PATH = (
-    Path(__file__).parent.parent.parent.parent / "models" / "catboost_final_model.joblib"
+    Path(__file__).parent.parent.parent.parent
+    / "models"
+    / "catboost_final_model.joblib"
 )
 FEATURE_NAMES_PATH = (
     Path(__file__).parent.parent.parent.parent / "models" / "feature_names.joblib"

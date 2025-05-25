@@ -182,36 +182,42 @@ def plot_combined_bar_charts(
     ]
 
     axis_font = {"family": "Styrene A", "color": "#191919"}
-    
+
     if not feature_chunks:
         return go.Figure()
-    
+
     fig = _create_bar_chart_figure(df, feature_chunks[0], axis_font)
-    
+
     if save_path:
         for chunk_index, chunk in enumerate(feature_chunks):
-            chunk_fig = fig if chunk_index == 0 else _create_bar_chart_figure(df, chunk, axis_font)
+            chunk_fig = (
+                fig
+                if chunk_index == 0
+                else _create_bar_chart_figure(df, chunk, axis_font)
+            )
             chunk_fig.write_image(f"{save_path}_chunk_{chunk_index + 1}.png")
 
     return fig
 
 
-def _create_bar_chart_figure(df: pd.DataFrame, feature_chunk: List[str], axis_font: Dict[str, str]) -> go.Figure:
+def _create_bar_chart_figure(
+    df: pd.DataFrame, feature_chunk: List[str], axis_font: Dict[str, str]
+) -> go.Figure:
     """Helper function to create a bar chart figure for a chunk of features.
-    
+
     Args:
         df: DataFrame containing the data.
         feature_chunk: List of features to plot.
         axis_font: Font configuration for axes.
-        
+
     Returns:
         The plotly Figure object.
     """
     title = f"Distribution of {', '.join(feature_chunk)}"
     rows, cols = 1, len(feature_chunk)
-    
+
     fig = make_subplots(rows=rows, cols=cols, horizontal_spacing=0.1)
-    
+
     for i, feature in enumerate(feature_chunk):
         value_counts = df[feature].value_counts().reset_index()
         value_counts.columns = [feature, "count"]
@@ -243,7 +249,7 @@ def _create_bar_chart_figure(df: pd.DataFrame, feature_chunk: List[str], axis_fo
             title_font={**axis_font, "size": 14},
             tickfont={**axis_font, "size": 12},
         )
-    
+
     fig.update_layout(
         title_text=title,
         title_x=0.5,
@@ -257,7 +263,7 @@ def _create_bar_chart_figure(df: pd.DataFrame, feature_chunk: List[str], axis_fo
         margin={"l": 50, "r": 50, "t": 80, "b": 150},
         font={**axis_font, "size": 12},
     )
-    
+
     return fig
 
 
@@ -375,7 +381,7 @@ def plot_correlation_matrix(
 
     if save_path:
         fig.write_image(save_path)
-    
+
     return fig
 
 
@@ -422,6 +428,7 @@ def detect_anomalies_iqr(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
         anomalies = pd.DataFrame(columns=features)
 
     return anomalies
+
 
 def flag_anomalies(df: pd.DataFrame, features: List[str]) -> pd.Series:
     """Flag anomalies in a DataFrame based on the IQR method.
@@ -816,7 +823,6 @@ def plot_feature_importances(
         fig.write_image(save_path)
 
     return fig
-
 
 
 class CustomVotingClassifier(VotingClassifier):

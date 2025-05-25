@@ -33,7 +33,7 @@ def captured_templates(app):
         template_rendered.disconnect(record, app)
 
 
-def test_index_route(client): # pylint: disable=redefined-outer-name
+def test_index_route(client):  # pylint: disable=redefined-outer-name
     """Test the index route."""
     with captured_templates(flask_app) as templates:
         response = client.get("/")

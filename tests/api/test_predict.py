@@ -20,7 +20,9 @@ def client():
 
 def test_predict_success(client):  # pylint: disable=redefined-outer-name
     """Tests the /predict endpoint with valid input."""
-    with patch("stroke_risk_predictor.services.model_service.predict_stroke_risk") as mock_predict:
+    with patch(
+        "stroke_risk_predictor.services.model_service.predict_stroke_risk"
+    ) as mock_predict:
         mock_predict.return_value = {
             "prediction": 0.5085650479735153,
             "feature_importances": {
@@ -52,7 +54,9 @@ def test_predict_success(client):  # pylint: disable=redefined-outer-name
 
 def test_predict_failure(client):  # pylint: disable=redefined-outer-name
     """Tests the /predict endpoint handling an exception."""
-    with patch("stroke_risk_predictor.services.model_service.predict_stroke_risk") as mock_predict:
+    with patch(
+        "stroke_risk_predictor.services.model_service.predict_stroke_risk"
+    ) as mock_predict:
         mock_predict.side_effect = Exception("Test Error")
         response = client.post("/predict", json={"feature1": "invalid"})
         assert response.status_code == 400
