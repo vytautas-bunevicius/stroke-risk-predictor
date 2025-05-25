@@ -8,7 +8,7 @@ import pytest
 
 from plotly.graph_objs import Figure
 
-from src.utils.stroke_risk_utils import (
+from stroke_risk_predictor.utils.analysis_tools import (
     plot_combined_histograms,
     plot_combined_bar_charts,
     plot_combined_boxplots,
