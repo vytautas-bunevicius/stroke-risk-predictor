@@ -8,3 +8,6 @@ catboost_info/
 .idx
 .vscode
 stroke_risk_analysis.html
+.claude/
+.venv/
+.idea/

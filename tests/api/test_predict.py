@@ -1,16 +1,12 @@
 """Unit tests for the stroke risk prediction API."""
 
-import sys
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from flask import Flask
 
-project_root = Path(__file__).resolve().parent.parent.parent
-sys.path.insert(0, str(project_root))
-
-from src.api.predict import predict_bp  # pylint: disable=wrong-import-position
+with patch("stroke_risk_predictor.services.model_service._load_model"):
+    from stroke_risk_predictor.api.prediction_endpoints import predict_bp
 
 
 @pytest.fixture
@@ -24,7 +20,7 @@ def client():
 
 def test_predict_success(client):  # pylint: disable=redefined-outer-name
     """Tests the /predict endpoint with valid input."""
-    with patch("src.services.model_service.predict_stroke_risk") as mock_predict:
+    with patch("stroke_risk_predictor.services.model_service.predict_stroke_risk") as mock_predict:
         mock_predict.return_value = {
             "prediction": 0.5085650479735153,
             "feature_importances": {
@@ -56,7 +52,7 @@ def test_predict_success(client):  # pylint: disable=redefined-outer-name
 
 def test_predict_failure(client):  # pylint: disable=redefined-outer-name
     """Tests the /predict endpoint handling an exception."""
-    with patch("src.services.model_service.predict_stroke_risk") as mock_predict:
+    with patch("stroke_risk_predictor.services.model_service.predict_stroke_risk") as mock_predict:
         mock_predict.side_effect = Exception("Test Error")
         response = client.post("/predict", json={"feature1": "invalid"})
         assert response.status_code == 400

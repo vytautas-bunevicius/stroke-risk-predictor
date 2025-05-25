@@ -1,0 +1,86 @@
+name: buzzstream-sequences-extractor tests
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        run: |
+          python -m pip install --upgrade pip
+          pip install uv
+
+      - name: Set up virtual environment and install dependencies
+        run: |
+          uv venv
+          source .venv/bin/activate
+          uv pip install -r requirements.txt
+          uv pip install pytest pytest-cov ruff==0.8.0
+          uv pip install -e .
+
+      - name: Check formatting with ruff
+        id: ruff
+        continue-on-error: true
+        run: |
+          source .venv/bin/activate
+          ruff format --check .
+
+      - name: Run tests with pytest and generate coverage
+        id: pytest
+        continue-on-error: true
+        run: |
+          source .venv/bin/activate
+          PYTHONPATH=$PYTHONPATH:$(pwd) python -m pytest tests/ --cov=src --cov-report=term-missing
+
+      - name: Send Slack notification
+        if: always()
+        run: |
+          RESULT="${{ (steps.pytest.outcome == 'success' && steps.ruff.outcome == 'success') && '✅ All Checks Passed' || '❌ Some Checks Failed' }}"
+          TESTS_STATUS="${{ steps.pytest.outcome == 'success' && '✅ Success' || '❌ Failed' }}"
+          FORMAT_STATUS="${{ steps.ruff.outcome == 'success' && '✅ Success' || '❌ Failed' }}"
+          COLOR="${{ (steps.pytest.outcome == 'success' && steps.ruff.outcome == 'success') && '#36a64f' || '#ff0000' }}"
+          
+          curl -X POST \
+            -H "Content-type: application/json" \
+            --data '{
+              "text": "<!subteam^S082EDY0CMS> | '"$RESULT"'",
+              "blocks": [
+                {
+                  "type": "section", 
+                  "text": {
+                    "type": "mrkdwn", 
+                    "text": "<!subteam^S082EDY0CMS> | '"$RESULT"'\n\n*Project:* buzzstream-sequences-extractor\n*Repository:* <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}>\n*Branch:* ${{ github.ref_name }}\n*Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Triggered by:* ${{ github.actor }}"
+                  }
+                },
+                {
+                  "type": "section", 
+                  "text": {
+                    "type": "mrkdwn", 
+                    "text": "*Check Details:*\n```\nTests: '"$TESTS_STATUS"'\nFormatting: '"$FORMAT_STATUS"'\n```"
+                  }
+                }
+              ],
+              "attachments": [
+                {
+                  "color": "'"$COLOR"'"
+                }
+              ]
+            }' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Exit with failure if any check failed
+        if: steps.pytest.outcome == 'failure' || steps.ruff.outcome == 'failure'
+        run: exit 1

@@ -1,17 +1,14 @@
 """Tests for the main application module."""
 
-import sys
-from pathlib import Path
 from contextlib import contextmanager
+from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from flask import template_rendered
 
-src_path = Path(__file__).resolve().parent.parent.parent / "src"
-sys.path.insert(0, str(src_path))
-
-# pylint: disable=import-error, wrong-import-position
-from app import app as flask_app  # noqa: E402
+with patch("stroke_risk_predictor.services.model_service._load_model"):
+    from stroke_risk_predictor.app import app as flask_app
 
 
 @pytest.fixture
