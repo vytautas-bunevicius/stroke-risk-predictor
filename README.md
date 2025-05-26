@@ -125,7 +125,7 @@ Current implemented models evaluated:
 
 Run the application locally:
 ```bash
-python src/app.py
+python src/stroke_risk_predictor/app.py
 ```
 
 Visit `http://localhost:5000` in your browser.
