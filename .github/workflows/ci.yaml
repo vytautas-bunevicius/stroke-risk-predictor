@@ -28,7 +28,7 @@ jobs:
         run: uv sync
 
       - name: Check formatting with ruff
-        run: uv run ruff format --check .
+        run: uv tool run ruff format --check .
 
       - name: Run tests with pytest and generate coverage
         run: |
