@@ -175,6 +175,3 @@ stroke_risk_predictor = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-
-[tool.uv.sources]
-pip = { path = "../Applications/PyCharm.app/Contents/plugins/python-ce/helpers/pip-24.3.1-py2.py3-none-any.whl" }
