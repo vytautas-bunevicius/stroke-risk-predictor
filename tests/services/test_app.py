@@ -1,11 +1,10 @@
 """Tests for the main application module."""
 
+import pytest
 from contextlib import contextmanager
+from flask import template_rendered
 from pathlib import Path
 from unittest.mock import patch
-
-import pytest
-from flask import template_rendered
 
 with patch("stroke_risk_predictor.services.model_service._load_model"):
     from stroke_risk_predictor.app import app as flask_app
@@ -52,8 +51,8 @@ def test_api_blueprint_registered():
 
 def test_static_folder():
     """Test that the static folder is set correctly."""
-    expected_path = Path(__file__).resolve().parent.parent.parent / "static"
-    assert Path(flask_app.static_folder).resolve() == expected_path
+    expected_path = Path(flask_app.root_path) / "ui" / "static"
+    assert Path(flask_app.static_folder).resolve() == expected_path.resolve()
 
 
 def test_template_folder():
