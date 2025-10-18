@@ -165,7 +165,12 @@ dependencies = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-stroke_risk_predictor = ["py.typed"]
+stroke_risk_predictor = [
+    "py.typed",
+    "ui/templates/*.html",
+    "ui/static/css/*",
+    "ui/static/js/*",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

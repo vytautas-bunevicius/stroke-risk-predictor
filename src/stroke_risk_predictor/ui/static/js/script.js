@@ -96,13 +96,13 @@ const StrokeRiskApp = {
    * @private
    */
   setupEventListeners_() {
-    this.elements_.calculateBMIButton.addEventListener('click', 
+    this.elements_.calculateBMIButton.addEventListener('click',
         () => this.toggleBMICalculator_());
-    
-    this.elements_.submitBMIButton.addEventListener('click', 
+
+    this.elements_.submitBMIButton.addEventListener('click',
         () => this.calculateBMI_());
-    
-    this.elements_.form.addEventListener('submit', 
+
+    this.elements_.form.addEventListener('submit',
         (event) => this.handleFormSubmit_(event));
   },
 
@@ -122,15 +122,15 @@ const StrokeRiskApp = {
   calculateBMI_() {
     const heightCm = parseFloat(this.elements_.heightInput.value);
     const weight = parseFloat(this.elements_.weightInput.value);
-    
+
     if (!this.isValidNumber_(heightCm) || !this.isValidNumber_(weight)) {
       alert('Please enter valid height and weight values');
       return;
     }
-    
+
     const heightM = heightCm / 100; // Convert cm to meters
     const bmi = weight / (heightM * heightM);
-    
+
     this.elements_.bmiInput.value = bmi.toFixed(1);
     this.elements_.bmiCalculator.classList.add('hidden');
   },
@@ -152,7 +152,7 @@ const StrokeRiskApp = {
    */
   async handleFormSubmit_(event) {
     event.preventDefault();
-    
+
     try {
       const formData = this.collectFormData_();
       const processedData = this.preprocessFormData_(formData);
@@ -182,7 +182,7 @@ const StrokeRiskApp = {
    */
   preprocessFormData_(data) {
     const processed = {...data};
-    
+
     // Convert numeric fields
     const numericFields = ['age', 'bmi', 'glucose_level'];
     numericFields.forEach(field => {
@@ -193,13 +193,13 @@ const StrokeRiskApp = {
         delete processed[field];
       }
     });
-    
+
     // Convert integer fields
     const integerFields = ['hypertension', 'heart_disease', 'ever_married', 'residence_type'];
     integerFields.forEach(field => {
       processed[field] = parseInt(processed[field], 10);
     });
-    
+
     return processed;
   },
 
@@ -218,17 +218,17 @@ const StrokeRiskApp = {
       },
       body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const result = await response.json();
-    
+
     if (!result.success) {
       throw new Error(result.error || 'Unknown error occurred');
     }
-    
+
     return result;
   },
 
@@ -239,16 +239,16 @@ const StrokeRiskApp = {
    */
   displayResults_(result) {
     const predictionData = result.prediction;
-    
+
     if (!this.isValidPrediction_(predictionData)) {
       throw new Error('Invalid prediction value received');
     }
-    
+
     const riskPercentage = (predictionData.prediction * 100).toFixed(2);
-    this.elements_.resultText.textContent = 
+    this.elements_.resultText.textContent =
         `The estimated stroke risk is ${riskPercentage}%`;
     this.elements_.resultDiv.classList.remove('hidden');
-    
+
     if (predictionData.feature_importances) {
       this.createRiskFactorsChart_(predictionData.feature_importances);
     } else {
@@ -263,11 +263,11 @@ const StrokeRiskApp = {
    * @private
    */
   isValidPrediction_(predictionData) {
-    return predictionData && 
-           typeof predictionData.prediction === 'number' && 
-           !isNaN(predictionData.prediction) &&
-           predictionData.prediction >= 0 &&
-           predictionData.prediction <= 1;
+    return predictionData &&
+        typeof predictionData.prediction === 'number' &&
+        !isNaN(predictionData.prediction) &&
+        predictionData.prediction >= 0 &&
+        predictionData.prediction <= 1;
   },
 
   /**
@@ -277,7 +277,7 @@ const StrokeRiskApp = {
    */
   handleError_(error) {
     console.error('Prediction error:', error);
-    this.elements_.resultText.textContent = 
+    this.elements_.resultText.textContent =
         `An error occurred while processing your request: ${error.message}`;
     this.elements_.resultDiv.classList.remove('hidden');
   },
@@ -289,27 +289,28 @@ const StrokeRiskApp = {
    */
   createRiskFactorsChart_(featureImportances) {
     const ctx = document.getElementById('risk-factors-chart').getContext('2d');
-    
+
     // Destroy existing chart if present
     if (this.riskFactorsChart_) {
       this.riskFactorsChart_.destroy();
     }
-    
+
     // Prepare chart data
     const chartData = this.prepareChartData_(featureImportances);
-    
+
     // Create new chart
     this.riskFactorsChart_ = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: chartData.labels,
-        datasets: [{
-          label: 'Feature Importance',
-          data: chartData.values,
-          backgroundColor: this.CHART_COLORS_,
-          borderColor: this.CHART_COLORS_,
-          borderWidth: 1
-        }]
+        datasets: [
+          {
+            label: 'Feature Importance',
+            data: chartData.values,
+            backgroundColor: this.CHART_COLORS_,
+            borderColor: this.CHART_COLORS_,
+            borderWidth: 1
+          }]
       },
       options: this.getChartOptions_()
     });
@@ -326,12 +327,12 @@ const StrokeRiskApp = {
     const sortedImportances = Object.entries(featureImportances)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 10);
-    
-    const labels = sortedImportances.map(([feature, _]) => 
+
+    const labels = sortedImportances.map(([feature, _]) =>
         this.FEATURE_LABELS_[feature] || feature);
-    
+
     const values = sortedImportances.map(([_, importance]) => importance);
-    
+
     return {labels, values};
   },
 
